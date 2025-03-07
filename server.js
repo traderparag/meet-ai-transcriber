@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios"); // To send requests to OpenAI
+require("dotenv").config(); // For environment variables
 
 const app = express();
 app.use(cors());
@@ -9,21 +11,33 @@ app.get("/", (req, res) => {
     res.send("Server is running! Use /transcribe to send audio.");
 });
 
-app.get("/transcribe", (req, res) => {
-    res.send("Use a POST request to send an audio file for transcription.");
-});
-
 app.post("/transcribe", async (req, res) => {
     try {
-        // Example: Check if request has an audio URL
-        if (!req.body.audio_url) {
+        const audioUrl = req.body.audio_url;
+        if (!audioUrl) {
             return res.status(400).json({ error: "Missing audio_url in request body." });
         }
 
-        // Simulating response (replace with actual AI transcription logic)
-        res.json({ transcription: "This is a sample transcription response." });
+        // Send audio file to OpenAI Whisper API for transcription
+        const response = await axios.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            {
+                model: "whisper-1",
+                file: audioUrl, // Send audio file
+                response_format: "json"
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        res.json({ transcription: response.data.text });
 
     } catch (error) {
+        console.error("Error transcribing:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Something went wrong!" });
     }
 });
