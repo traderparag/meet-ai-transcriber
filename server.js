@@ -1,38 +1,43 @@
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios"); // To send requests to OpenAI
-require("dotenv").config(); // For environment variables
+const multer = require("multer");
+const fs = require("fs");
+const axios = require("axios");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Configure Multer for file uploads
+const upload = multer({ dest: "uploads/" });
+
 app.get("/", (req, res) => {
     res.send("Server is running! Use /transcribe to send audio.");
 });
 
-app.post("/transcribe", async (req, res) => {
+// Updated /transcribe endpoint to handle file uploads
+app.post("/transcribe", upload.single("file"), async (req, res) => {
     try {
-        const audioUrl = req.body.audio_url;
-        if (!audioUrl) {
-            return res.status(400).json({ error: "Missing audio_url in request body." });
+        if (!req.file) {
+            return res.status(400).json({ error: "Missing audio file." });
         }
 
-        // Send audio file to OpenAI Whisper API for transcription
-        const response = await axios.post(
-            "https://api.openai.com/v1/audio/transcriptions",
-            {
-                model: "whisper-1",
-                file: audioUrl, // Send audio file
-                response_format: "json"
-            },
-            {
-                headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                    "Content-Type": "application/json"
-                }
+        const audioFilePath = req.file.path;
+        
+        const formData = new FormData();
+        formData.append("file", fs.createReadStream(audioFilePath));
+        formData.append("model", "whisper-1"); // Whisper API model
+
+        const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+            headers: {
+                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                ...formData.getHeaders()
             }
-        );
+        });
+
+        // Delete file after processing
+        fs.unlinkSync(audioFilePath);
 
         res.json({ transcription: response.data.text });
 
