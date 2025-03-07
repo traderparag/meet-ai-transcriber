@@ -9,6 +9,10 @@ app.get("/", (req, res) => {
     res.send("Server is running! Use /transcribe to send audio.");
 });
 
+app.get("/transcribe", (req, res) => {
+    res.send("Use a POST request to send an audio file for transcription.");
+});
+
 app.post("/transcribe", async (req, res) => {
     try {
         // Example: Check if request has an audio URL
