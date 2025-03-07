@@ -9,7 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 // Configure Multer for file uploads
 const upload = multer({ dest: "uploads/" });
 
