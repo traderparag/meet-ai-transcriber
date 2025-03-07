@@ -1,49 +1,25 @@
-require("dotenv").config();
-const express = require("express");
-const multer = require("multer");
-const axios = require("axios");
-const { google } = require("googleapis");
-const nodemailer = require("nodemailer");
+const express = require('express');
+const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
 app.use(express.json());
-const upload = multer();
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-// 🟢 Transcription API
-app.post("/transcribe", upload.single("audio"), async (req, res) => {
-    const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", {
-        audio: req.file.buffer.toString("base64"),
-        model: "whisper-1",
-    }, {
-        headers: { Authorization: `Bearer ${OPENAI_API_KEY}` }
-    });
-
-    res.json({ transcript: response.data.text });
+app.get("/", (req, res) => {
+    res.send("AI Transcriber API is Running!");
 });
 
-// 🟢 Summarization API
-app.post("/summarize", async (req, res) => {
-    const { transcript } = req.body;
-    const response = await axios.post("https://api.openai.com/v1/chat/completions", {
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: `Summarize this:\n${transcript}` }]
-    }, {
-        headers: { Authorization: `Bearer ${OPENAI_API_KEY}` }
-    });
+// Placeholder for Transcription API
+app.post("/transcribe", (req, res) => {
+    const { audioData } = req.body;
 
-    res.json({ summary: response.data.choices[0].message.content });
+    // Mock response for testing
+    res.json({ transcript: "This is a sample transcription." });
 });
 
-// 🟢 Email Summary API
-app.post("/send-email", async (req, res) => {
-    // Gmail API setup (OAuth)
-    const { recipient, summary } = req.body;
-    // (OAuth setup code here)
-
-    res.json({ message: "Email sent!" });
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
-
-// Start Server
-app.listen(5000, () => console.log("Server running on port 5000"));
